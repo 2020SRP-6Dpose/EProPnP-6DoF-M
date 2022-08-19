@@ -1,4 +1,5 @@
-# EPro-PnP-6DoF
+# EPro-PnP-6DoF-M
+
 
 <img src="viz.gif" width="550" alt=""/>
 
