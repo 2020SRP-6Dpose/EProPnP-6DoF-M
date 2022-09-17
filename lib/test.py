@@ -80,12 +80,14 @@ def test(epoch, cfg, data_loader, model, obj_vtx, obj_info, criterions):
     num_iters = len(data_loader)
     bar = Bar('{}'.format(cfg.pytorch.exp_id[-60:]), max=num_iters)
 
+    # visualization
     time_monitor = False
     vis_dir = os.path.join(cfg.pytorch.save_path, 'test_vis_{}'.format(epoch))
     if not os.path.exists(vis_dir):
         os.makedirs(vis_dir)
 
     cam_intrinsic_np = cfg.dataset.camera_matrix.astype(np.float32)
+    # 相机内参
     cam_intrinsic = torch.from_numpy(cam_intrinsic_np).cuda(cfg.pytorch.gpu)
 
     epropnp = EProPnP6DoF(
@@ -116,7 +118,7 @@ def test(epoch, cfg, data_loader, model, obj_vtx, obj_info, criterions):
             # To use standard softmax, comment out the two lines above and uncomment the line below:
             # w2d = w2d.softmax(dim=-1).reshape(bs, 2, 64, 64) * scale[..., None, None]
 
-        if i % cfg.test.disp_interval == 0:
+        if i % cfg.test.disp_interval == 0: # 每disp_interval个sample进行一次display
             # display input image
             inp_rgb = (inp[0].cpu().numpy().copy() * 255)[[2, 1, 0], :, :].astype(np.uint8)
             cfg.writer.add_image('input_image', inp_rgb, i)

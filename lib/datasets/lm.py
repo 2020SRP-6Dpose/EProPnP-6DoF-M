@@ -6,6 +6,7 @@
 @file: LineMOD.py
 @time: 18-10-24 下午10:24
 @desc: load LineMOD dataset
+@note: every modification should delete folder "dataset_cache" and rerun to apply it
 """
 
 import torch.utils.data as data
@@ -26,27 +27,27 @@ from utils.eval import calc_rt_dist_m
 class LM(data.Dataset):
     def __init__(self, cfg, split):
         self.cfg = cfg
-        self.split = split
+        self.split = split  # "test" or "train"
         self.infos = self.load_lm_model_info(ref.lm_model_info_pth)
-        self.cam_K = ref.K
+        self.cam_K = ref.K  # 相机内参
         logger.info('==> initializing {} {} data.'.format(cfg.dataset.name, split))
         # load dataset
-        annot = []
+        annot = []  # annotation标注
         if split == 'test':
-            cache_dir = os.path.join(ref.cache_dir, 'test')
+            cache_dir = os.path.join(ref.cache_dir, 'test') # 缓存文件夹
             if not os.path.exists(cache_dir):
                 os.makedirs(cache_dir)
-            for obj in tqdm(self.cfg.dataset.classes):
+            for obj in tqdm(self.cfg.dataset.classes):  # "all" ?
                 cache_pth = os.path.join(cache_dir, '{}.npy'.format(obj))
-                if not os.path.exists(cache_pth):
+                if not os.path.exists(cache_pth):   # 若{obj}.npy文件不存在
                     annot_cache = []
-                    rgb_pths = glob(os.path.join(ref.lm_test_dir, obj, '*-color.png'))
+                    rgb_pths = glob(os.path.join(ref.lm_test_dir, obj, '*-color.png'))  # 返回所有匹配的文件路径列表
                     for rgb_pth in tqdm(rgb_pths):
                         item = self.col_test_item(rgb_pth)
                         item['obj'] = obj
                         annot_cache.append(item)
-                    np.save(cache_pth, annot_cache)
-                annot.extend(np.load(cache_pth, allow_pickle=True).tolist())
+                    np.save(cache_pth, annot_cache) # 保存为npy文件
+                annot.extend(np.load(cache_pth, allow_pickle=True).tolist())    # 若{obj}.npy文件存在则导入
             self.num = len(annot)
             self.annot = annot
             logger.info('load {} test samples.'.format(self.num))
@@ -78,9 +79,11 @@ class LM(data.Dataset):
                         annot_cache = []
                         coor_pths = sorted(glob(os.path.join(ref.lm_train_imgn_dir, obj, '*-coor.pkl')))
                         for coor_pth in tqdm(coor_pths):
+                            # 对该obj的所有图像进行处理
                             item = self.col_imgn_item(coor_pth)
                             item['obj'] = obj
                             annot_cache.append(item)
+
                         np.save(cache_pth, annot_cache)
                     annot_obj = np.load(cache_pth, allow_pickle=True).tolist()
                     annot_obj_num = len(annot_obj)
@@ -92,7 +95,7 @@ class LM(data.Dataset):
                         else:
                             raise ValueError
                         annot_obj = np.asarray(annot_obj)[samp_idx].tolist()
-                    annot.extend(annot_obj)
+                    annot.extend(annot_obj) # 以sample为单位
                 self.imgn_num = len(annot) - self.real_num
                 logger.info('load {} imgn training samples.'.format(self.imgn_num))
             self.num = len(annot)
@@ -102,6 +105,7 @@ class LM(data.Dataset):
         else:
             raise ValueError
         
+    # item即为annotation内容
     def col_test_item(self, rgb_pth):
         item = {}
         item['rgb_pth'] = rgb_pth
@@ -110,6 +114,9 @@ class LM(data.Dataset):
         item['mask_pth'] = rgb_pth.replace('-color.png', '-label.png')
         item['coor_pth'] = rgb_pth.replace('-color.png', '-coor.pkl')
         item['data_type'] = 'real'
+        # modify begin
+        item['obVTX_pth'] = rgb_pth.replace('-color.png', '-obVTX.ply')
+        # modify end
         return item 
 
     def col_train_item(self, rgb_pth):
@@ -120,6 +127,9 @@ class LM(data.Dataset):
         item['mask_pth'] = rgb_pth.replace('-color.png', '-label.png')
         item['coor_pth'] = rgb_pth.replace('-color.png', '-coor.pkl')
         item['data_type'] = 'real'
+                # modify begin
+        item['obVTX_pth'] = rgb_pth.replace('-color.png', '-obVTX.ply')
+        # modify end
         return item 
 
     def col_imgn_item(self, coor_pth):
@@ -135,6 +145,9 @@ class LM(data.Dataset):
         item['mask_pth'] = coor_pth.replace('-coor.pkl', '-label.png')
         item['coor_pth'] = coor_pth.replace('-coor.pkl', '-coor.pkl')
         item['data_type'] = 'imgn'
+        # modify begin
+        item['obVTX_pth'] = coor_pth.replace('-coor.pkl', '-obVTX.ply')
+        # modify end
         return item 
 
     @staticmethod
@@ -190,6 +203,9 @@ class LM(data.Dataset):
 
     def load_obj(self, idx):
         return self.annot[idx]['obj']
+
+    def load_obVTX_pth(self, idx):
+        return self.annot[idx]['obVTX_pth']
 
     def load_type(self, idx):
         return self.annot[idx]['data_type']
@@ -319,7 +335,7 @@ class LM(data.Dataset):
             inp = rgb
             out = np.concatenate([coor, msk[None, :, :]], axis=0)
             loss_msk = np.stack([msk, msk, msk, np.ones_like(msk)], axis=0)
-            trans = pose[:, 3]
+            trans = pose[:, 3]  # 平移，相当于观测坐标系原点在标准空间的坐标
             c_obj, _ = prj_vtx_cam(trans, self.cam_K)
             c_delta = self.c_rel_delta(c_obj, c, box[2:])
             d_local = self.d_scaled(trans[2], s, self.cfg.dataiter.out_res)

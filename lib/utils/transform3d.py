@@ -22,7 +22,7 @@ def prj_vtx_cam(vtx, cam_K):
         raise
     if single:
         vtx = np.asarray(vtx)[None, :] 
-    pts_3d_c = np.matmul(cam_K, vtx.T) 
+    pts_3d_c = np.matmul(cam_K, vtx.T) # 矩阵乘积
     pts_2d = pts_3d_c[:2] / pts_3d_c[2]
     z = pts_3d_c[2]
     if single:
@@ -43,6 +43,17 @@ def prj_vtx_pose(vtx, pose, cam_K):
     pts_2d = pts_3d_c[:2] / pts_3d_c[2]
     z = pts_3d_w[2]
     return pts_2d.T, z
+
+def prj_vtx_observed(vtx, pose):
+    """
+    project canonical 3D vertices to observation 3D vertices by pose and cam_K
+    :param vtx: (N, 3), vertices
+    :param pose: (3, 4)
+    :return: pts_3D: (N, 3)
+    """
+    pts_3d_w = np.matmul(pose[:, :3], vtx.T) + pose[:, 3].reshape((3, 1)) # (3,3)*(3,N)->(3,N), +(3,1) -> (3,N)
+    return pts_3d_w.T   # (N, 3)
+
 
 def prj_vtx_pth(vtx, pose, cam_K):
     """

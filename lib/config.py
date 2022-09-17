@@ -36,7 +36,10 @@ def get_default_config_pytorch():
     config.debug_path = '../debug'  # debug save path
     config.save_mode = 'all'        # 'all' | 'best', save all models or only save the best model
     config.load_model = ''          # path to a previously trained model
-    config.test = False             # run in test mode or not
+    # modified 8.18 START
+    config.dataPrep = False         # run in dataPreparation mode or not
+    # modified END
+    config.test = True              # run in test mode or not
     return config
 
 def get_default_dataset_config():
@@ -215,14 +218,18 @@ class config():
         if config.network.trans_head_freeze == True:
             config.loss.trans_loss_weight = 0
 
-        if config.pytorch.test:
+        # modified 8.18 START
+        if config.pytorch.test and not config.pytorch.dataPrep:
             config.pytorch.exp_id = config.pytorch.exp_id + 'TEST'
+        
+        if config.pytorch.dataPrep:
+            config.pytorch.exp_id = config.pytorch.exp_id + 'DATAPRE'
+        # modified END
 
         # complement config regarding paths
         now = datetime.now().isoformat()
-        presentTime = now.replace(":", "-")
         # save path
-        config.pytorch['save_path'] = os.path.join(ref.exp_dir, config.pytorch.exp_id, presentTime)
+        config.pytorch['save_path'] = os.path.join(ref.exp_dir, config.pytorch.exp_id, now)
         if not os.path.exists(config.pytorch.save_path):
             os.makedirs(config.pytorch.save_path, exist_ok=True)
         # debug path
@@ -246,7 +253,7 @@ class config():
 
         pprint(config)
         # copy and save current config file
-        os.system('copy {} {}'.format(config_file, os.path.join(config.pytorch.save_path, 'config_copy.yaml')))
+        os.system('cp {} {}'.format(config_file, os.path.join(config.pytorch.save_path, 'config_copy.yaml')))
         # save all config infos
         args = dict((name, getattr(config, name)) for name in dir(config) if not name.startswith('_'))
         refs = dict((name, getattr(ref, name)) for name in dir(ref) if not name.startswith('_'))

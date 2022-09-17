@@ -10,8 +10,9 @@ pytorch:
   threads_num: 12
   debug: False
   save_mode: 'best'  # 'all' | 'best', save all models or only save the best model
-  load_model: 'D:\pywork\2022\8\EPro-PnP-main\EPro-PnP-6DoF\checkpoints\epropnp_basic.pth'
-  test: True
+  load_model: '/mnt/nvme0n1/pywork/2022/7/EPro-PnP/EPro-PnP-6DoF/exp/epropnp_basic/2022-08-09T13:15:20.754308/model_last.checkpoint'
+  test: False
+  dataPrep: True
   demo: False
 
 dataset:

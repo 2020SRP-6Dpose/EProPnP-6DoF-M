@@ -41,6 +41,7 @@ from test import test
 from config import config
 from tqdm import tqdm 
 
+
 def main():
     cfg = config().parse()
     network, optimizer = build_model(cfg)
@@ -70,9 +71,10 @@ def main():
     obj_vtx = {}
     logger.info('load 3d object models...')
     for obj in tqdm(cfg.dataset.classes):
-        obj_vtx[obj] = load_ply_vtx(os.path.join(ref.lm_model_dir, '{}/{}.ply'.format(obj, obj)))
+        obj_vtx[obj] = load_ply_vtx(os.path.join(ref.lm_model_dir, '{}/{}.ply'.format(obj, obj)))   # 点云数据
     obj_info = LM.load_lm_model_info(ref.lm_model_info_pth)
 
+    # 若为test模式
     if cfg.pytorch.test:
         _, preds = test(0, cfg, test_loader, network, obj_vtx, obj_info, criterions)
         if preds is not None:

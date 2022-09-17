@@ -4,7 +4,7 @@ https://github.com/LZGMatrix/CDPN_ICCV2019_ZhigangLi
 """
 
 import pickle as pkl
-from plyfile import PlyData
+from plyfile import PlyData, PlyElement
 import numpy as np
 
 # ======================================
@@ -23,12 +23,12 @@ def load_ply_vtx(pth):
 
 def load_ply_vtx_expand(pth, expand_ratio=0):
     """
-    load and expand object vertices via interpolation on edges 
+    load and expand object vertices via interpolation（插值） on edges 
     :param pth: str
     :param expand_ratio: int, expanding ratio, should be >= 0, default: 0, i.e. w/o expanding.
     :return: pts: (N, 3)
     """
-    f = open(pth, 'r')
+    f = open(pth, 'r')  # read模式打开pth处文件
     assert f.readline().strip() == "ply"
     while True:
         line = f.readline().strip()
@@ -59,6 +59,19 @@ def load_ply_vtx_expand(pth, expand_ratio=0):
         pts = pts+pts_expand
     f.close()
     return np.array(pts)
+
+def write_ply(save_pth, pts, text=True):
+    """
+    save point cloud (vtx only) into a .ply file
+    :param save_path: str, path to save, for example, '/yy/XX.ply'
+    :param pts: array-like, size=(N,3), point_cloud
+    """ 
+    # pts = pts.tolist()
+    pts = [(pts[i,0], pts[i,1], pts[i,2]) for i in range(pts.shape[0])]
+    vertex = np.array(pts, dtype=[('x', 'f4'), ('y', 'f4'),('z', 'f4')]) # float4
+    el = PlyElement.describe(vertex, 'vertex', comments=['vertices'])
+    PlyData([el], text=text).write(save_pth)
+
 
 # ======================================
 # .pkl file
